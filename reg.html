@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8" />
+		<title>Document</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link rel="stylesheet" type="text/css" href="css/mui.css" />
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">用户注册</h1>
+		</header>
+		<div class="mui-content">
+			<div class="mui-input-group">
+				<div class="mui-input-row">
+					<label>用户名：</label>
+					<input id="username" type="text" class="mui-input-clear" placeholder="请输入用户名">
+				</div>
+				<div class="mui-input-row">
+					<label>密码：</label>
+					<input id="pwd" type="password" class="mui-input-clear mui-input-password" placeholder="请输入密码">
+				</div>
+				<div class="mui-input-row">
+					<label>确认密码：</label>
+					<input id="repwd" type="password" class="mui-input-clear mui-input-password" placeholder="请输入密码">
+				</div>
+				<div class="mui-input-row">
+					<label>昵称：</label>
+					<input id="nickname" type="text" class="mui-input-clear" placeholder="请输入用户名">
+				</div>
+				
+				<div class="mui-input-row mui-radio mui-left">
+				    <label>男</label>
+				    <input name="radio" type="radio" checked value="1">
+				</div>
+				<div class="mui-input-row mui-radio mui-left">
+				    <label>女</label>
+				    <input name="radio" type="radio" value="2">
+				</div>				
+				<div class="mui-button-row">
+					<button type="button" class="mui-btn mui-btn-primary" id="sub_btn">注册</button>
+					<button type="button" class="mui-btn mui-btn-danger">返回</button>
+				</div>
+			</div>
+		</div>
+		<script src="js/mui.js" type="text/javascript" charset="utf-8"></script>
+		<script src="js/md5.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			mui.init()
+			document.getElementById("sub_btn").addEventListener("tap",function(){
+				var username = document.getElementById("username").value;
+				var pwd = document.getElementById("pwd").value;
+				var repwd = document.getElementById("repwd").value;
+				
+				if(pwd != repwd){
+					mui.toast("你好帅比，密码都输不对");
+					return
+				}
+				
+				var md5_pwd=hex_md5(pwd);
+				var nickname = document.getElementById("nickname").value;
+				var gender = 1;
+				var gender_radio = document.getElementsByName("radio") ;
+				for (var i = 0; i < gender_radio.length; i++) {
+					if(gender_radio[i].checked){
+						gender = gender_radio[i].value
+					}
+				}
+				
+				mui.post(
+					window.serv + "/reg_user",
+					{username:username,password:md5_pwd,nickname:nickname,gender:gender},
+					function(data){
+						if(data.code==0){
+							mui.toast(data.msg);
+							window.localStorage.setItem("user",data._id);
+							mui.openWindow({
+								url:"user_info.html",
+								id:"user_info.html",
+								styles:window.styles,
+								extras:{
+									user_id:data.user_id
+								}
+							})				
+						}else{
+							mui.toast(data.msg);
+						}
+					}
+				)
+				
+			})
+			
+		</script>
+	</body>
+
+</html>

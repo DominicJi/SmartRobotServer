@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8" />
+		<title>Document</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link rel="stylesheet" type="text/css" href="css/mui.css" />
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title">绑定玩具</h1>
+		</header>
+		<div class="mui-content">
+			<form class="mui-input-group">
+				<div class="mui-input-row">
+					<label>玩具名字：</label>
+					<input type="text" class="mui-input-clear" placeholder="给玩具取个名字" id="toy_name">
+				</div>
+				<div class="mui-input-row">
+					<label>宝宝名字：</label>
+					<input type="text" class="mui-input-clear" placeholder="玩具的所有者" id="baby_name">
+				</div>
+				<div class="mui-input-row">
+					<label>对象称呼：</label>
+					<input type="text" class="mui-input-clear" placeholder="宝宝对您的称呼" id="remark">
+				</div>
+
+				<div class="mui-button-row">
+					<button type="button" class="mui-btn mui-btn-primary" id="sub_btn">确认</button>
+				</div>
+			</form>
+		</div>
+		<script src="js/mui.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			mui.init()
+			var Sdata = null;
+			mui.plusReady(function() {
+				Sdata = plus.webview.currentWebview();
+				//  	Sdata.user_id
+				//  	Sdata.device_key
+
+			})
+
+			document.getElementById("sub_btn").addEventListener("tap", function() {
+				var toy_name = document.getElementById("toy_name").value;
+				var baby_name = document.getElementById("baby_name").value;
+				var remark = document.getElementById("remark").value;
+				mui.post(
+					window.serv + "/bind_toy", {
+						toy_name: toy_name,
+						baby_name: baby_name,
+						remark: remark,
+						user_id: Sdata.user_id,
+						device_key: Sdata.device_key
+					},
+					function(data) {
+						if(data.code == 0) {
+							mui.toast(data.msg);
+							mui.openWindow({
+								url: "user_info.html",
+								id: "user_info.html",
+								
+							})
+//							var toy_manager = plus.webview.getWebviewById("toy_manager.html")
+//							mui.fire(toy_manager,"ref");
+							
+						}
+					}
+				)
+			})
+		</script>
+	</body>
+
+</html>

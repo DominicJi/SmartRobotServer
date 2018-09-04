@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<title></title>
+		<script src="js/mui.js"></script>
+		<link href="css/mui.css" rel="stylesheet" />
+	</head>
+
+	<body>
+		<nav class="mui-bar mui-bar-tab">
+			<a class="mui-tab-item mui-active" id="main">
+				<span class="mui-icon mui-icon-home"></span>
+				<span class="mui-tab-label">首页</span>
+			</a>
+			<a class="mui-tab-item" id="message">
+				<span class="mui-icon mui-icon-chat"><span id="msg_count" class="mui-badge mui-badge-red">0</span></span>
+				<span class="mui-tab-label">消息</span>
+			</a>
+			<a class="mui-tab-item" id="req">
+				<span class="mui-icon mui-icon-contact"></span>
+				<span class="mui-tab-label">好友请求</span>
+			</a>
+			<a class="mui-tab-item" id="setting">
+				<span class="mui-icon mui-icon-gear"></span>
+				<span class="mui-tab-label">设置</span>
+			</a>
+		</nav>
+	</body>
+	<script type="text/javascript" charset="utf-8">
+		mui.init({
+			subpages: [{
+				url: "main.html",
+				id: "main.html",
+				styles: {
+					top: "0px",
+					bottom: "44px"
+				}
+			}]
+		});
+
+		var user_id = window.localStorage.getItem("user")
+
+		var ws = null
+		var msg = null
+		var msg_post = null
+		if(user_id) {
+			ws = new WebSocket(window.ws_serv + user_id)
+
+			ws.onmessage = function(data) {
+				console.log(data.data);
+				msg = JSON.parse(data.data)
+				document.getElementById("msg_count").innerText = msg.count
+				var message_page = plus.webview.getWebviewById("message.html")
+				mui.fire(message_page, "new_msg", msg)
+
+			}
+			
+			ws.onclose = function(){
+				console.log("111111");
+				window.location.reload();
+			}
+		}
+
+		mui.plusReady(function() {
+			mui.toast(user_id);
+			mui.post(
+				window.serv + "/chat_count", {
+					user_id: user_id
+				},
+				function(data) {
+					console.log(JSON.stringify(data));
+					msg = data
+					document.getElementById("msg_count").innerText = data.count
+				}
+			)
+
+		})
+
+		document.getElementById("message").addEventListener("tap", function() {
+			mui.openWindow({
+				url: "message.html",
+				id: "message.html",
+				styles: {
+					top: "0px",
+					bottom: "44px"
+				},
+				extras: {
+					user_id: user_id,
+					msg_count: msg
+				}
+			})
+		})
+
+		document.getElementById("main").addEventListener("tap", function() {
+			mui.openWindow({
+				url: "main.html",
+				id: "main.html",
+				styles: {
+					top: "0px",
+					bottom: "44px"
+				}
+			})
+		})
+
+		document.getElementById("req").addEventListener("tap", function() {
+			mui.openWindow({
+				url: "req_list.html",
+				id: "req_list.html",
+				styles: {
+					top: "0px",
+					bottom: "44px"
+				},
+				extras:{
+					user_id:user_id 
+				}
+				
+			})
+		})
+
+		document.getElementById("setting").addEventListener("tap", function() {
+			user_id = window.localStorage.getItem("user")
+			if(user_id) {
+				mui.openWindow({
+					url: "user_info.html",
+					id: "user_info.html",
+					styles: {
+						top: "0px",
+						bottom: "44px"
+					},
+					extras: {
+						user_id: user_id
+					}
+				})
+			} else {
+				mui.openWindow({
+					url: "login.html",
+					id: "login.html",
+					styles: {
+						top: "0px",
+						bottom: "44px"
+					}
+				})
+			}
+		})
+
+		document.addEventListener("send_msg", function(data) {
+			var sender = data.detail
+			var file_path = sender.msg
+			console.log(file_path);
+
+			send_str = {
+				to_user: sender.to_user,
+				type: "chat",
+			}
+			ws.send(JSON.stringify(send_str))
+
+			plus.io.resolveLocalFileSystemURL(file_path, function(entry) {
+				entry.file(function(file) {
+					reader = new plus.io.FileReader();
+					reader.readAsDataURL(file);
+					reader.onloadend = function(e) {
+						var file_content = e.target.result;
+						//	                                ws.send(file_content);
+						dataURLtoBlob(file_content)
+					};
+				}, function(e) {
+					mui.toast(e.message);
+				});
+			})
+
+		})
+
+		function dataURLtoBlob(dataurl) {
+			var arr = dataurl.split(','),
+				mime = arr[0].match(/:(.*?);/)[1],
+				bstr = atob(arr[1]),
+				n = bstr.length,
+				u8arr = new Uint8Array(n);
+			while(n--) {
+				u8arr[n] = bstr.charCodeAt(n);
+			}
+			var file_blob = new Blob([u8arr], {
+				type: mime
+			});
+
+			ws.send(file_blob)
+			return file_blob
+		}
+
+		document.addEventListener("send_music", function(data) {
+			ws.send(JSON.stringify(data.detail))
+		})
+
+		document.addEventListener("ref", function(data) {
+			window.location.reload();
+		})
+	</script>
+
+</html>

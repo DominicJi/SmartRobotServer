@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8" />
+		<title>Document</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link rel="stylesheet" type="text/css" href="css/mui.css" />
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<h1 class="mui-title">消息列表</h1>
+		</header>
+		<div class="mui-content">
+			<ul class="mui-table-view" id="toy_list">
+
+			</ul>
+		</div>
+		<script src="js/mui.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var Sdata = null;
+			mui.init();
+			mui.plusReady(function() {
+				Sdata = plus.webview.currentWebview();
+				mui.post(
+					window.serv + "/friend_list", {
+						user_id: Sdata.user_id
+					},
+					function(data) {
+						console.log(JSON.stringify(data))
+						for(var i = 0; i < data.length; i++) {
+							console.log(Sdata.msg_count);
+							create_content(data[i], Sdata.msg_count[data[i].friend_id])
+						}
+					}
+				)
+			})
+
+			function create_content(content, count) {
+				//				<span id="msg_count" class="mui-badge mui-badge-red" 
+				//				style="display:none">0</span>
+
+				if(!count) {
+					count = 0
+				}
+
+				var spantag = document.createElement("span");
+				spantag.className = "mui-badge mui-badge-red";
+				//				spantag.display = "none";
+				spantag.id = content.friend_id + "_msg";
+				spantag.innerHTML = count;
+
+				var litag = document.createElement("li");
+				litag.className = "mui-table-view-cell mui-media";
+				var atag = document.createElement("a");
+				atag.id = content.friend_id;
+				atag.onclick = function() {
+					//					play_music(this.id);
+					chat_window(this)
+
+				}
+				var imgtag = document.createElement("img");
+				imgtag.className = "mui-media-object mui-pull-left"
+				imgtag.src = "avatar/" + content.avatar;
+				var divtag = document.createElement("div");
+				divtag.className = "mui-media-body";
+				divtag.innerText = content.baby_name;
+				var ptag = document.createElement("p");
+				ptag.className = "mui-ellipsis";
+				ptag.innerText = content.toy_name;
+
+				litag.appendChild(atag);
+				atag.appendChild(imgtag);
+				atag.appendChild(divtag);
+				atag.appendChild(spantag);
+				divtag.appendChild(ptag);
+
+				document.getElementById("toy_list").appendChild(litag);
+			}
+
+			function chat_window(tag) {
+				mui.openWindow({
+					url: "chat.html",
+					id: "chat.html",
+					extras: {
+						user_id: Sdata.user_id,
+						to_user: tag.id
+					}
+				})
+			}
+
+			document.addEventListener("ref", function(data) {
+				window.location.reload();
+			})
+		</script>
+	</body>
+
+</html>

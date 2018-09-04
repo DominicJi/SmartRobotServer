@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+
+	<head>
+		<meta charset="UTF-8" />
+		<title>Document</title>
+		<meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
+		<link rel="stylesheet" type="text/css" href="css/mui.css" />
+		<link rel="stylesheet" type="text/css" href="css/chat.css" />
+	</head>
+
+	<body>
+		<header class="mui-bar mui-bar-nav">
+			<a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+			<h1 class="mui-title" id="title_text">正在對話</h1>
+		</header>
+		<div class="mui-scroll-wrapper mui-content" style="margin-bottom: 65px;">
+			<div class="mui-scroll">
+				<div  id="msg_list">
+					<div class="leftd" style="margin-top: 15px;">
+						<span class="leftd_h">
+		    		<img src="avatar/boy.jpg"/>
+		    	</span>
+						<div class="speech left">点击播放</div>
+					</div>
+					<div class="rightd" style="margin-top: 15px;">
+						<span class="rightd_h">
+		    		<img src="avatar/boy.jpg"/>
+		    	</span>
+						<div class="speech right">点击播放</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<nav class="mui-bar mui-bar-tab">
+			<a class="mui-tab-item mui-active" id="speech">
+				<span class="mui-icon mui-icon-speech"></span>
+				<span class="mui-tab-label">長按說話</span>
+			</a>
+		</nav>
+		<script src="js/mui.js" type="text/javascript" charset="utf-8"></script>
+		<script type="text/javascript">
+			var reco = null
+			var Sdata = null
+			var index = null
+
+			mui.init({
+				gestureConfig: {
+					tap: true, //默认为true
+					doubletap: true, //默认为false
+					longtap: true, //默认为false
+					swipe: true, //默认为true
+					drag: true, //默认为true
+					hold: true, //默认为false，不监听
+					release: true //默认为false，不监听
+				}
+			});
+			mui.plusReady(function() {
+				index = plus.webview.getWebviewById("HBuilder");
+				Sdata = plus.webview.currentWebview();
+				mui.post(
+					window.serv + "/chat_list", {
+						user_id: Sdata.user_id,
+						to_user: Sdata.to_user
+					},
+					function(data) {
+						console.log(JSON.stringify(data))
+						for(var i = 0; i < data.length; i++) {
+							if(data[i].sender == Sdata.user_id) {
+								create_msg("self", window.chat_serv + data[i].content);
+							} else {
+								create_msg("other", window.chat_serv + data[i].content)
+							}
+						}
+
+						mui('.mui-scroll-wrapper').scroll().scrollToBottom(10);
+					}
+				)
+				
+				mui.fire(index,"ref")
+				var message = plus.webview.getWebviewById("message.html");
+				mui.fire(message,"ref")
+			})
+
+			function start_speech() {
+				reco = plus.audio.getRecorder()
+				reco.record({
+					filename: "_doc/audio/"
+				}, function(p) {
+					mui.toast(p);
+
+					mui.fire(index, "send_msg", {
+						msg: p,
+						to_user: Sdata.to_user
+					});
+
+					create_msg("self", p);
+
+				})
+			}
+
+			function stop_speech() {
+				setTimeout(reco.stop(), 750)
+			}
+
+			document.getElementById("speech").addEventListener("hold", function() {
+				console.log("1111111111")
+				start_speech();
+			})
+
+			document.getElementById("speech").addEventListener("release", function() {
+				console.log("2222222222")
+
+				stop_speech();
+			})
+
+			function create_msg(self, file) {
+				var l_r = "leftd"
+				var l_r_d = "leftd_h"
+				var l_r_speech = "speech left"
+
+				if(self == "self") {
+					l_r = "rightd"
+					l_r_d = "rightd_h"
+					l_r_speech = "speech right"
+				}
+
+				var divtag = document.createElement("div");
+				divtag.id = file;
+				divtag.onclick = function() {
+					console.log(this.id)
+					play_chat(this.id);
+				}
+				divtag.className = l_r;
+				divtag.style = "margin-top: 15px;"
+				var spantag = document.createElement("span");
+				spantag.className = l_r_d;
+				var imgtag = document.createElement("img");
+				imgtag.src = "avatar/boy.jpg";
+				var divtag2 = document.createElement("div");
+				divtag2.className = l_r_speech
+				divtag2.innerText = "点击播放";
+
+				divtag.appendChild(spantag);
+				divtag.appendChild(divtag2);
+				spantag.appendChild(imgtag);
+
+				document.getElementById("msg_list").appendChild(divtag)
+			}
+
+			function play_chat(file_name) {
+				var player = plus.audio.createPlayer(file_name)
+				player.play()
+			}
+
+			document.addEventListener("new_msg", function(data) {
+				file = window.chat_serv + data.detail.content
+				create_msg("other", file);
+			})
+			
+			
+		</script>
+	</body>
+
+</html>
